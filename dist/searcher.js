@@ -47,7 +47,6 @@ export class Searcher {
         return new Promise((resolve, reject) => {
             this.db = new sqlite3.Database(this.options.db, sqlite3.OPEN_READONLY, (err) => {
                 if (err) {
-                    console.error('>>>E', this.options.db, err);
                     return reject(err);
                 }
                 process.nextTick(() => {
@@ -58,7 +57,7 @@ export class Searcher {
     }
     async getMetadata() {
         if (!this.metadata) {
-            const metadata = await this.dbAll('SELECT * FROM metadata');
+            const metadata = await this.selectAll('SELECT * FROM metadata');
             this.metadata = metadata.reduce((acc, row) => {
                 acc[row.id] = row.value;
                 return acc;
@@ -72,7 +71,7 @@ export class Searcher {
 			${docIds ? `WHERE docs_entities.doc IN (${docIds.map(() => '?')})` : ''}
 			GROUP BY docs_entities.entity ORDER BY entityCount DESC
 			LIMIT ${limit}`;
-        const entities = await this.dbAll(sql, docIds ? [...docIds] : []);
+        const entities = await this.selectAll(sql, docIds ? [...docIds] : []);
         return entities.map((entity) => {
             return {
                 count: entity.entityCount,
@@ -88,8 +87,8 @@ export class Searcher {
         });
     }
     async getTOC() {
-        const docs = await this.dbAll(`SELECT id, title FROM docs WHERE crawl = false AND title IS NOT NULL`);
-        const sections = await this.dbAll(`SELECT id, doc, level, title FROM sections WHERE title IS NOT NULL`);
+        const docs = await this.selectAll(`SELECT id, title FROM docs WHERE crawl = false AND title IS NOT NULL`);
+        const sections = await this.selectAll(`SELECT id, doc, level, title FROM sections WHERE title IS NOT NULL`);
         return docs.map((doc) => {
             return {
                 id: doc.id,
@@ -108,7 +107,7 @@ export class Searcher {
     }
     async getDoc(idOrUrl) {
         const metadata = await this.getMetadata();
-        const doc = await this.dbGet(`SELECT
+        const doc = await this.selectOne(`SELECT
 				docs.*,
 				imageDocs.crawl as imageDocCrawl,
 				imageDocs.crc as imageDocCrc,
@@ -120,7 +119,7 @@ export class Searcher {
 			WHERE ${idOrUrl === 'string' ? 'docs.url = ?' : 'docs.id = ?'}`, [idOrUrl]);
         let contents = doc.contents;
         if (!contents) {
-            const sections = await this.dbAll(`SELECT * FROM sections WHERE doc = ? ORDER BY id ASC`, [doc.id]);
+            const sections = await this.selectAll(`SELECT * FROM sections WHERE doc = ? ORDER BY id ASC`, [doc.id]);
             contents = this.replaceAnchors(await this.replaceLinks(sections.map((section) => {
                 const level = section.level || 3;
                 return `${section.title ? `${'#'.repeat(level)} ${section.title}\n\n` : ''}${section.contents || ''}`;
@@ -186,7 +185,7 @@ export class Searcher {
             : `WHERE docs.title IS NOT NULL`}
 		ORDER BY docs.boost, docs.publishedAt DESC
 		LIMIT ${options.limit}`;
-        const items = await this.dbAll(sql, options.entityIds);
+        const items = await this.selectAll(sql, options.entityIds);
         if (!entities && options.returnEntities) {
             if (options.returnEntities === 'related') {
                 entities = await this.getEntities(void 0, items.map(({ id }) => id));
@@ -260,7 +259,7 @@ export class Searcher {
 			LEFT JOIN docs as imageSections ON sections.image = imageSections.id
 			LEFT JOIN docs as linkSections ON sections.link = linkSections.id
 		WHERE sections_fts MATCH ? ORDER BY score LIMIT ${options.limit};`;
-        const items = await this.dbAll(sql, [term]);
+        const items = await this.selectAll(sql, [term]);
         return Promise.all(items.map(async (item) => {
             return {
                 boost: item.boost,
@@ -344,7 +343,7 @@ export class Searcher {
         for (let item of match) {
             ids.push(+item[1]);
         }
-        const docs = await this.dbAll(`SELECT id, crawl, crc, url FROM docs WHERE id IN (${ids.map(() => '?')})`, [...ids]);
+        const docs = await this.selectAll(`SELECT id, crawl, crc, url FROM docs WHERE id IN (${ids.map(() => '?')})`, [...ids]);
         let cursor = 0;
         let result = '';
         for (let item of match) {
@@ -365,7 +364,7 @@ export class Searcher {
         return result + contents.slice(cursor);
         ;
     }
-    async dbAll(sql, params = []) {
+    async selectAll(sql, params = []) {
         const db = await this.open();
         return new Promise((resolve, reject) => {
             db.all(sql, params, (err, rows) => {
@@ -376,7 +375,7 @@ export class Searcher {
             });
         });
     }
-    async dbGet(sql, params = []) {
+    async selectOne(sql, params = []) {
         const db = await this.open();
         return new Promise((resolve, reject) => {
             db.get(sql, params, (err, row) => {

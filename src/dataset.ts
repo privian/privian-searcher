@@ -37,7 +37,6 @@ export abstract class Dataset extends EventEmitter {
 			db: this.filePath,
 			normalizeUrl: this.options.normalizeUrl,
 		});
-		this.load();
 	}
 
 	get id() {
@@ -51,20 +50,6 @@ export abstract class Dataset extends EventEmitter {
 			this.emit('update_available');
 		}
 		return this.updateAvailable;
-	}
-
-	async dbAll(sql: string, params: any[]) {
-		if (!this.info) {
-			return [];
-		}
-		return this.searcher.dbAll(sql, params);
-	}
-
-	async dbGet(sql: string, params: any[]) {
-		if (!this.info) {
-			return null;
-		}
-		return this.searcher.dbGet(sql, params);
 	}
 
 	async head(): Promise<IStorageInfo> {
@@ -103,8 +88,6 @@ export abstract class Dataset extends EventEmitter {
 			if (force || this.updateAvailable) {
 				const tmpFilePath = this.filePath + '.tmp';
 				let stats: fs.Stats | null = null;
-				// random delay to handle concurrent pulls
-				await new Promise((resolve) => setTimeout(resolve, Math.floor(Math.random() * 500)));
 				try {
 					stats = await fs.promises.stat(tmpFilePath);
 				} catch (err: any) {

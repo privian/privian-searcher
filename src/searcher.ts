@@ -62,7 +62,6 @@ export class Searcher {
 		return new Promise((resolve, reject) => {
 			this.db = new sqlite3.Database(this.options.db, sqlite3.OPEN_READONLY, (err) => {
 				if (err) {
-					console.error('>>>E', this.options.db, err)
 					return reject(err);
 				}
 				process.nextTick(() => {
@@ -74,7 +73,7 @@ export class Searcher {
 
 	async getMetadata(): Promise<Record<string, string>> {
 		if (!this.metadata) {
-			const metadata = await this.dbAll<{ id: string, value: string }>('SELECT * FROM metadata');
+			const metadata = await this.selectAll<{ id: string, value: string }>('SELECT * FROM metadata');
 			this.metadata = metadata.reduce((acc, row) => {
 				acc[row.id] = row.value;
 				return acc;
@@ -89,7 +88,7 @@ export class Searcher {
 			${docIds ? `WHERE docs_entities.doc IN (${docIds.map(() => '?')})` : ''}
 			GROUP BY docs_entities.entity ORDER BY entityCount DESC
 			LIMIT ${limit}`;
-		const entities = await this.dbAll<{
+		const entities = await this.selectAll<{
 			entityCount: number;
 			id: number;
 			name: string;
@@ -111,11 +110,11 @@ export class Searcher {
 	}
 
 	async getTOC(): Promise<ITOCItem[]> {
-		const docs = await this.dbAll<{
+		const docs = await this.selectAll<{
 			id: number;
 			title: string;
 		}>(`SELECT id, title FROM docs WHERE crawl = false AND title IS NOT NULL`);
-		const sections = await this.dbAll<{
+		const sections = await this.selectAll<{
 			doc: number;
 			id: number;
 			level: number | null;
@@ -140,7 +139,7 @@ export class Searcher {
 
 	async getDoc(idOrUrl: number | string): Promise<IDoc> {
 		const metadata = await this.getMetadata();
-		const doc = await this.dbGet<IDbDoc & {
+		const doc = await this.selectOne<IDbDoc & {
 			imageDocCrawl: string | null;
 			imageDocCrc: string | null;
 			imageDocSize: number | null;
@@ -158,7 +157,7 @@ export class Searcher {
 			WHERE ${idOrUrl === 'string' ? 'docs.url = ?' : 'docs.id = ?'}`, [idOrUrl]);
 		let contents: Buffer | string | null = doc.contents;
 		if (!contents) {
-			const sections = await this.dbAll<{
+			const sections = await this.selectAll<{
 				contents: string | null;
 				level: number | null
 				title: string | null;
@@ -229,7 +228,7 @@ export class Searcher {
 			: `WHERE docs.title IS NOT NULL`}
 		ORDER BY docs.boost, docs.publishedAt DESC
 		LIMIT ${options.limit}`;
-		const items = await this.dbAll<IDbDoc & {
+		const items = await this.selectAll<IDbDoc & {
 			imageCrawl: boolean | null;
 			imageCrc: string | null;
 			imageSize: number | null;
@@ -310,7 +309,7 @@ export class Searcher {
 			LEFT JOIN docs as imageSections ON sections.image = imageSections.id
 			LEFT JOIN docs as linkSections ON sections.link = linkSections.id
 		WHERE sections_fts MATCH ? ORDER BY score LIMIT ${options.limit};`
-		const items = await this.dbAll<IDbSection & {
+		const items = await this.selectAll<IDbSection & {
 			docBoost: number;
 			docImage: number | null;
 			docMetadata: string | null;
@@ -418,7 +417,7 @@ export class Searcher {
 		for (let item of match) {
 			ids.push(+item[1]);
 		}
-		const docs = await this.dbAll<{
+		const docs = await this.selectAll<{
 			crawl: boolean;
 			crc: string;
 			id: number;
@@ -442,7 +441,7 @@ export class Searcher {
 		return result + contents.slice(cursor);;
 	}
 
-	async dbAll<T>(sql: string, params: any[] = []): Promise<T[]> {
+	async selectAll<T>(sql: string, params: any[] = []): Promise<T[]> {
 		const db = await this.open();
 		return new Promise((resolve, reject) => {
 			db.all(sql, params, (err, rows) => {
@@ -454,7 +453,7 @@ export class Searcher {
 		});
 	}
 
-	async dbGet<T>(sql: string, params: any[] = []): Promise<T> {
+	async selectOne<T>(sql: string, params: any[] = []): Promise<T> {
 		const db = await this.open();
 		return new Promise((resolve, reject) => {
 			db.get(sql, params, (err, row) => {

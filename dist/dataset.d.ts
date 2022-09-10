@@ -24,8 +24,6 @@ export declare abstract class Dataset extends EventEmitter {
     constructor(url: string, filePath: string, options: IDatasetOptions);
     get id(): string;
     checkForUpdates(): Promise<boolean>;
-    dbAll(sql: string, params: any[]): Promise<unknown[]>;
-    dbGet(sql: string, params: any[]): Promise<unknown>;
     head(): Promise<IStorageInfo>;
     load(): Promise<void>;
     mkdir(dirPath: string): Promise<void>;

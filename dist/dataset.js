@@ -29,7 +29,6 @@ export class Dataset extends EventEmitter {
             db: this.filePath,
             normalizeUrl: this.options.normalizeUrl,
         });
-        this.load();
     }
     get id() {
         return path.basename(this.url).replace(/\.db$/, '');
@@ -41,18 +40,6 @@ export class Dataset extends EventEmitter {
             this.emit('update_available');
         }
         return this.updateAvailable;
-    }
-    async dbAll(sql, params) {
-        if (!this.info) {
-            return [];
-        }
-        return this.searcher.dbAll(sql, params);
-    }
-    async dbGet(sql, params) {
-        if (!this.info) {
-            return null;
-        }
-        return this.searcher.dbGet(sql, params);
     }
     async head() {
         return this.headRequest();
@@ -87,8 +74,6 @@ export class Dataset extends EventEmitter {
             if (force || this.updateAvailable) {
                 const tmpFilePath = this.filePath + '.tmp';
                 let stats = null;
-                // random delay to handle concurrent pulls
-                await new Promise((resolve) => setTimeout(resolve, Math.floor(Math.random() * 500)));
                 try {
                     stats = await fs.promises.stat(tmpFilePath);
                 }

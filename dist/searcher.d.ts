@@ -23,6 +23,6 @@ export declare class Searcher {
     replaceAnchors(contents: string): string;
     removeAnchors(contents: string): string;
     replaceLinks(contents: string): Promise<string>;
-    dbAll<T>(sql: string, params?: any[]): Promise<T[]>;
-    dbGet<T>(sql: string, params?: any[]): Promise<T>;
+    selectAll<T>(sql: string, params?: any[]): Promise<T[]>;
+    selectOne<T>(sql: string, params?: any[]): Promise<T>;
 }
