@@ -21,11 +21,11 @@ export class HttpDataset extends Dataset {
 		}
 	}
 
-	async headRequest(): Promise<any> {
+	async headRequest(): Promise<IStorageInfo> {
 		return this.request('HEAD', this.url);	
 	}
 
-	async pullRequest(destFilePath: string): Promise<any> {
+	async pullRequest(destFilePath: string): Promise<IStorageInfo> {
 		return this.request('GET', this.url, destFilePath);	
 	}
 
@@ -56,6 +56,7 @@ export class HttpDataset extends Dataset {
 						}
 						return acc;
 					}, {} as Record<string, string>),
+					remote: String(resp.headers['x-features'])?.split(',').includes('searcher'),
 					size,
 					status: resp.statusCode,
 				};

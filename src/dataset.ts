@@ -1,14 +1,16 @@
 import { EventEmitter } from 'node:events';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 import parseDuration from 'parse-duration';
 import { Searcher } from './searcher.js';
+import { RemoteSearcher } from './remote-searcher.js';
 import type { IDatasetOptions, IStorageInfo } from './types.js';
 
 export abstract class Dataset extends EventEmitter {
 	readonly MIN_UPDATE_INTERVAL = 900000;
 
-	info: IStorageInfo | null = null;
+	localFilePath: string;
 
 	metadata: Record<string, string> = {};
 
@@ -16,7 +18,7 @@ export abstract class Dataset extends EventEmitter {
 
 	pulling: boolean = false;
 
-	readonly searcher: Searcher;
+	searcher?: Searcher;
 	
 	size: number | null = null;
 
@@ -30,21 +32,24 @@ export abstract class Dataset extends EventEmitter {
 
 	updatesCheckedAt: Date | null = null;
 
-	constructor(readonly url: string, readonly filePath: string, readonly options: IDatasetOptions) {
+	constructor(readonly url: string, readonly options: IDatasetOptions = {
+		allowRemote: true,
+		autoUpdate: true,
+	}) {
 		super();
-		this.searcher = new Searcher({
-			datasetId: this.id,
-			db: this.filePath,
-			normalizeUrl: this.options.normalizeUrl,
-		});
+		this.localFilePath = this.options.localFilePath || path.join(os.tmpdir(), path.basename(this.url));
 	}
 
 	get id() {
 		return path.basename(this.url).replace(/\.db$/, '');
 	}
 
-	async checkForUpdates() {
-		this.updateAvailable = !this.info || !this.compareInfo(this.info, await this.head());
+	async checkForUpdates(head?: IStorageInfo) {
+		if (!head) {
+			head = await this.head();
+		}
+		const localInfo = await this.readLocalInfo();
+		this.updateAvailable = !localInfo || !this.compareInfo(localInfo, head);
 		this.updatesCheckedAt = new Date();
 		if (this.updateAvailable) {
 			this.emit('update_available');
@@ -57,15 +62,31 @@ export abstract class Dataset extends EventEmitter {
 	}
 
 	async load() {
-		await this.readInfo(this.filePath);
-		if (this.info) {
-			await this.readMetadata();
-		}
-		if (this.options.autoUpdate) {
-			await this.pull();
-			const updateInterval = this.metadata.updateInterval && parseDuration(this.metadata.updateInterval);
-			if (updateInterval && updateInterval >= this.MIN_UPDATE_INTERVAL) {
-				this.startPullInterval(updateInterval);
+		const head = await this.head();
+		if (head.remote && this.options.allowRemote !== false) {
+			this.metadata = head.metadata;
+			this.searcher = new RemoteSearcher({
+				datasetId: this.id,
+				db: this.url,
+				normalizeUrl: this.options.normalizeUrl,
+			});
+
+		} else {
+			this.searcher = new Searcher({
+				datasetId: this.id,
+				db: this.localFilePath,
+				normalizeUrl: this.options.normalizeUrl,
+			});
+			if (this.options.autoUpdate) {
+				await this.checkForUpdates(head);
+				if (this.updateAvailable) {
+					await this.pull();
+				}
+				this.metadata = head.metadata;
+				const updateInterval = this.metadata.updateInterval && parseDuration(this.metadata.updateInterval);
+				if (updateInterval && updateInterval >= this.MIN_UPDATE_INTERVAL) {
+					this.startPullInterval(updateInterval);
+				}
 			}
 		}
 	}
@@ -77,41 +98,34 @@ export abstract class Dataset extends EventEmitter {
 	}
 
 	async pull(force: boolean = false): Promise<boolean> {
-		if (this.pulling) {
+		if (!force && (this.pulling || !this.updateAvailable)) {
 			return false;
 		}
 		try {
 			this.pulling = true;
-			if (!force) {
-				await this.checkForUpdates();
-			}
-			if (force || this.updateAvailable) {
-				const tmpFilePath = this.filePath + '.tmp';
-				let stats: fs.Stats | null = null;
-				try {
-					stats = await fs.promises.stat(tmpFilePath);
-				} catch (err: any) {
-					if (err.code !== 'ENOENT') {
-						throw err;
-					}
+			const tmpFilePath = this.localFilePath + '.tmp';
+			let stats: fs.Stats | null = null;
+			try {
+				stats = await fs.promises.stat(tmpFilePath);
+			} catch (err: any) {
+				if (err.code !== 'ENOENT') {
+					throw err;
 				}
-				// don't pull when a tmp file already exists
-				if (!stats?.mtimeMs) {
-					await this.mkdir(path.dirname(this.filePath));
-					// create empty tmp file
-					fs.closeSync(fs.openSync(tmpFilePath, 'w'));
-					const info = await this.pullRequest(tmpFilePath);
-					if (info) {
-						await this.writeInfo(this.filePath, info);
-						await this.readInfo(this.filePath);
-						await this.searcher.close();
-						// wait for fs sync
-						await new Promise((resolve) => setTimeout(resolve, 500));
-						await fs.promises.rename(tmpFilePath, this.filePath);
-						await this.readMetadata();
-						this.updateAvailable = false;
-						this.emit('updated');
-					}
+			}
+			// don't pull when a tmp file already exists
+			if (!stats?.mtimeMs) {
+				await this.mkdir(path.dirname(this.localFilePath));
+				// create empty tmp file
+				fs.closeSync(fs.openSync(tmpFilePath, 'w'));
+				const info = await this.pullRequest(tmpFilePath);
+				if (info) {
+					await this.writeInfo(this.localFilePath, info);
+					await this.searcher?.close();
+					// wait for fs sync
+					await new Promise((resolve) => setTimeout(resolve, 500));
+					await fs.promises.rename(tmpFilePath, this.localFilePath);
+					this.updateAvailable = false;
+					this.emit('updated');
 				}
 			}
 		} finally {
@@ -120,37 +134,17 @@ export abstract class Dataset extends EventEmitter {
 		return true;
 	}
 
-	async readInfo(filePath: string) {
+	async readLocalInfo() {
+		let info: IStorageInfo | null = null;
 		try {
-			this.info = JSON.parse(await fs.promises.readFile(filePath + '.info', 'utf8'));
+			info = JSON.parse(await fs.promises.readFile(this.localFilePath + '.info', 'utf8'));
 		} catch (err: any) {
 			if (err.code === 'ENOENT') {
 				return null;
 			}
 			throw err;
 		}
-		return this.info;
-	}
-
-	async readMetadata() {
-		try {
-			this.metadata = await this.searcher.getMetadata();
-			this.emit('metadata');
-		} catch (err: any) {
-			throw new Error(`Unable to read metadata: ${err.message}`);
-		}
-	}
-
-	async readStats(): Promise<fs.Stats | null> {
-		try {
-			this.stats = await fs.promises.stat(this.filePath);
-			this.size = this.stats.size;
-		} catch (err: any) {
-			if (err.code !== 'ENOENT') {
-				throw err;
-			}
-		}
-		return this.stats;
+		return info;
 	}
 
 	async writeInfo(filePath: string, info: IStorageInfo) {
@@ -170,9 +164,9 @@ export abstract class Dataset extends EventEmitter {
 		}
 		if (unlinkData) {
 			try {
-				fs.unlinkSync(this.filePath);
-				fs.unlinkSync(this.filePath + '.info');
-				fs.unlinkSync(this.filePath + '.tmp');
+				fs.unlinkSync(this.localFilePath);
+				fs.unlinkSync(this.localFilePath + '.info');
+				fs.unlinkSync(this.localFilePath + '.tmp');
 			} catch {
 				// noop
 			}

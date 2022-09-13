@@ -5,7 +5,7 @@ export declare class HttpDataset extends Dataset {
     readonly METADATA_HEADERS: string[];
     req?: Request;
     abort(): void;
-    headRequest(): Promise<any>;
-    pullRequest(destFilePath: string): Promise<any>;
+    headRequest(): Promise<IStorageInfo>;
+    pullRequest(destFilePath: string): Promise<IStorageInfo>;
     request(method: Method, url: string, destFilePath?: string): Promise<IStorageInfo>;
 }

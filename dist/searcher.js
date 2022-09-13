@@ -366,6 +366,9 @@ export class Searcher {
     }
     async selectAll(sql, params = []) {
         const db = await this.open();
+        if (!db) {
+            throw new Error('Unable to open database.');
+        }
         return new Promise((resolve, reject) => {
             db.all(sql, params, (err, rows) => {
                 if (err) {
@@ -377,6 +380,9 @@ export class Searcher {
     }
     async selectOne(sql, params = []) {
         const db = await this.open();
+        if (!db) {
+            throw new Error('Unable to open database.');
+        }
         return new Promise((resolve, reject) => {
             db.get(sql, params, (err, row) => {
                 if (err) {

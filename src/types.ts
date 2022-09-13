@@ -121,7 +121,9 @@ export interface ISearchItem {
 }
 
 export interface IDatasetOptions {
+	allowRemote: boolean;
 	autoUpdate: boolean;
+	localFilePath?: string;
 	normalizeUrl?: (link: ILink, datasetId?: string) => string;
 }
 
@@ -132,6 +134,7 @@ export interface IStorageOptions {
 
 export interface IStorageInfo {
 	metadata: Record<string, string>;
+	remote: boolean;
 	size: number;
 	status: number;
 }

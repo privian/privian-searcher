@@ -48,6 +48,7 @@ export class HttpDataset extends Dataset {
                         }
                         return acc;
                     }, {}),
+                    remote: String(resp.headers['x-features'])?.split(',').includes('searcher'),
                     size,
                     status: resp.statusCode,
                 };

@@ -3,6 +3,16 @@ import { URL } from 'node:url';
 import { HttpDataset } from './http-dataset.js';
 export class Storage {
     options;
+    static getDatasetClass(url) {
+        const parsed = new URL(url);
+        switch (parsed.protocol) {
+            case 'http:':
+            case 'https:':
+                return HttpDataset;
+            default:
+                throw new Error(`Unsupported protocol ${url}.`);
+        }
+    }
     datasets = new Map();
     datasetsIdMapping = new Map();
     constructor(options) {
@@ -30,7 +40,7 @@ export class Storage {
         return [...this.datasets].map(([_, dataset]) => {
             return {
                 id: dataset.id,
-                localFilePath: dataset.filePath,
+                localFilePath: dataset.localFilePath,
                 metadata: dataset.metadata,
                 mtime: dataset.stats?.mtimeMs,
                 size: dataset.size,
@@ -60,17 +70,13 @@ export class Storage {
         return [...this.datasetsIdMapping].find((item) => item[1] === id)?.[0];
     }
     newDataset(url) {
-        const parsed = new URL(url);
-        switch (parsed.protocol) {
-            case 'http:':
-            case 'https:':
-                return new HttpDataset(url, this.getFilePath(url), {
-                    autoUpdate: true,
-                    normalizeUrl: this.options.normalizeUrl,
-                });
-            default:
-                throw new Error(`Unsupported protocol ${url}.`);
-        }
+        const cls = Storage.getDatasetClass(url);
+        return new cls(url, {
+            allowRemote: true,
+            autoUpdate: true,
+            localFilePath: this.getFilePath(url),
+            normalizeUrl: this.options.normalizeUrl,
+        });
     }
     getFilePath(url) {
         const parsed = new URL(url);

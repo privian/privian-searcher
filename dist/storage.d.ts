@@ -1,8 +1,8 @@
 import { Dataset } from './dataset.js';
-import { HttpDataset } from './http-dataset.js';
-import type { IStorageOptions } from './types.js';
+import type { IDatasetOptions, IStorageOptions } from './types.js';
 export declare class Storage {
     readonly options: IStorageOptions;
+    static getDatasetClass(url: string): new (url: string, options: IDatasetOptions) => Dataset;
     readonly datasets: Map<string, Dataset>;
     readonly datasetsIdMapping: Map<string, string>;
     constructor(options: IStorageOptions);
@@ -22,6 +22,6 @@ export declare class Storage {
     }[];
     get(urlOrId: string): Dataset;
     getUrlById(id: string): string | undefined;
-    newDataset(url: string): HttpDataset;
+    newDataset(url: string): Dataset;
     getFilePath(url: string): string;
 }

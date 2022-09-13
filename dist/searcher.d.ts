@@ -8,7 +8,7 @@ export declare class Searcher {
     metadata?: Record<string, string>;
     constructor(options: IOptions);
     close(): Promise<unknown>;
-    open(): Promise<sqlite3.Database>;
+    open(): Promise<sqlite3.Database | void>;
     getMetadata(): Promise<Record<string, string>>;
     getEntities(limit?: number, docIds?: number[]): Promise<IEntity[]>;
     getTopEntities(): Promise<IEntity[]>;

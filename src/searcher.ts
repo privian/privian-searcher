@@ -55,7 +55,7 @@ export class Searcher {
 		});
 	}
 
-	async open(): Promise<sqlite3.Database> {
+	async open(): Promise<sqlite3.Database | void> {
 		if (this.db) {
 			return this.db;
 		}
@@ -443,6 +443,9 @@ export class Searcher {
 
 	async selectAll<T>(sql: string, params: any[] = []): Promise<T[]> {
 		const db = await this.open();
+		if (!db) {
+			throw new Error('Unable to open database.');
+		}
 		return new Promise((resolve, reject) => {
 			db.all(sql, params, (err, rows) => {
 				if (err) {
@@ -455,6 +458,9 @@ export class Searcher {
 
 	async selectOne<T>(sql: string, params: any[] = []): Promise<T> {
 		const db = await this.open();
+		if (!db) {
+			throw new Error('Unable to open database.');
+		}
 		return new Promise((resolve, reject) => {
 			db.get(sql, params, (err, row) => {
 				if (err) {

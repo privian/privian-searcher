@@ -2,9 +2,20 @@ import path from 'node:path';
 import { URL } from 'node:url';
 import { Dataset } from './dataset.js';
 import { HttpDataset } from './http-dataset.js';
-import type { IStorageOptions } from './types.js';
+import type { IDatasetOptions, IStorageOptions } from './types.js';
 
 export class Storage {
+	static getDatasetClass(url: string): new (url: string, options: IDatasetOptions) => Dataset {
+		const parsed = new URL(url);
+		switch (parsed.protocol) {
+			case 'http:':
+			case 'https:':
+				return HttpDataset;
+			default:
+				throw new Error(`Unsupported protocol ${url}.`);
+		}
+	}
+
 	readonly datasets: Map<string, Dataset> = new Map();
 
 	readonly datasetsIdMapping: Map<string, string> = new Map();
@@ -36,7 +47,7 @@ export class Storage {
 		return [...this.datasets].map(([ _, dataset ]) => {
 			return {
 				id: dataset.id,
-				localFilePath: dataset.filePath,
+				localFilePath: dataset.localFilePath,
 				metadata: dataset.metadata,
 				mtime: dataset.stats?.mtimeMs,
 				size: dataset.size,
@@ -68,17 +79,13 @@ export class Storage {
 	}
 
 	newDataset(url: string) {
-		const parsed = new URL(url);
-		switch (parsed.protocol) {
-			case 'http:':
-			case 'https:':
-				return new HttpDataset(url, this.getFilePath(url), {
-					autoUpdate: true,
-					normalizeUrl: this.options.normalizeUrl,
-				});
-			default:
-				throw new Error(`Unsupported protocol ${url}.`);
-		}
+		const cls = Storage.getDatasetClass(url);
+		return new cls(url, {
+			allowRemote: true,
+			autoUpdate: true,
+			localFilePath: this.getFilePath(url),
+			normalizeUrl: this.options.normalizeUrl,
+		});
 	}
 
 	getFilePath(url: string) {
