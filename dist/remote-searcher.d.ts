@@ -9,7 +9,7 @@ export declare class RemoteSearcher extends Searcher {
     getEntities(limit?: number, docIds?: number[]): Promise<IEntity[]>;
     getTopEntities(): Promise<IEntity[]>;
     getTOC(): Promise<ITOCItem[]>;
-    getDoc(idOrUrl: number | string): Promise<Partial<IDoc>>;
+    getDoc(idOrUrl: number | string): Promise<Partial<IDoc> | null>;
     listDocs(options?: Partial<IListDocsOptions>): Promise<{
         docs: Partial<IDoc>[];
         entities: IEntity[] | null;

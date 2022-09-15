@@ -137,7 +137,7 @@ export class Searcher {
 		});
 	}
 
-	async getDoc(idOrUrl: number | string): Promise<Partial<IDoc>> {
+	async getDoc(idOrUrl: number | string): Promise<Partial<IDoc> | null> {
 		const metadata = await this.getMetadata();
 		const doc = await this.selectOne<IDbDoc & {
 			imageDocCrawl: string | null;
@@ -155,6 +155,9 @@ export class Searcher {
 			FROM docs
 				LEFT JOIN docs as imageDocs ON docs.image = imageDocs.id
 			WHERE ${idOrUrl === 'string' ? 'docs.url = ?' : 'docs.id = ?'}`, [idOrUrl]);
+		if (!doc) {
+			return null;
+		}
 		let contents: Buffer | string | null = doc.contents;
 		if (!contents) {
 			const sections = await this.selectAll<{

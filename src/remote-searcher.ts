@@ -57,7 +57,7 @@ export class RemoteSearcher extends Searcher {
 		});
 	}
 
-	async getDoc(idOrUrl: number | string): Promise<Partial<IDoc>> {
+	async getDoc(idOrUrl: number | string): Promise<Partial<IDoc> | null> {
 		const result = await this.request('POST', {
 			searcher: {
 				operation: 'getDoc',

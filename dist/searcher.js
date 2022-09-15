@@ -117,6 +117,9 @@ export class Searcher {
 			FROM docs
 				LEFT JOIN docs as imageDocs ON docs.image = imageDocs.id
 			WHERE ${idOrUrl === 'string' ? 'docs.url = ?' : 'docs.id = ?'}`, [idOrUrl]);
+        if (!doc) {
+            return null;
+        }
         let contents = doc.contents;
         if (!contents) {
             const sections = await this.selectAll(`SELECT * FROM sections WHERE doc = ? ORDER BY id ASC`, [doc.id]);
