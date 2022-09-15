@@ -128,7 +128,7 @@ export interface IDatasetOptions {
 }
 
 export interface IStorageOptions {
-	dir: string;
+	dir?: string;
 	normalizeUrl?: (link: ILink, datasetId?: string) => string;
 }
 

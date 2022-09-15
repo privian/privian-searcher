@@ -83,13 +83,13 @@ export class Storage {
 		return new cls(url, {
 			allowRemote: true,
 			autoUpdate: true,
-			localFilePath: this.getFilePath(url),
+			localFilePath: this.options.dir ? this.getFilePath(url) : void 0,
 			normalizeUrl: this.options.normalizeUrl,
 		});
 	}
 
 	getFilePath(url: string) {
 		const parsed = new URL(url);
-		return path.resolve(process.cwd(), path.join(this.options.dir, parsed.protocol.slice(0, -1), parsed.hostname, parsed.pathname));
+		return path.resolve(process.cwd(), path.join(this.options.dir || './', parsed.protocol.slice(0, -1), parsed.hostname, parsed.pathname));
 	}
 }
