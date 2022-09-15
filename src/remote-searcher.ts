@@ -75,24 +75,24 @@ export class RemoteSearcher extends Searcher {
 		return result;
 	}
 
-	async listDocs(userOptions?: Partial<IListDocsOptions>): Promise<{ docs: Partial<IDoc>[], entities: IEntity[] | null }> {
+	async listDocs(options?: Partial<IListDocsOptions>): Promise<{ docs: Partial<IDoc>[], entities: IEntity[] | null }> {
 		return this.request('POST', {
 			searcher: {
 				operation: 'listDocs',
 				parameters: {
-					userOptions,
+					options,
 				},
 			},
 		});
 	}
 	
-	async search(term: string, userOptions?: Partial<ISearchOptions>): Promise<ISearchItem[]> {
+	async search(term: string, options?: Partial<ISearchOptions>): Promise<ISearchItem[]> {
 		return this.request('POST', {
 			searcher: {
 				operation: 'search',
 				parameters: {
 					term,
-					userOptions,
+					options,
 				},
 			},
 		});
