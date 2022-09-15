@@ -41,14 +41,21 @@ export class RemoteSearcher extends Searcher {
         });
     }
     async getDoc(idOrUrl) {
-        return this.request('POST', {
+        const result = await this.request('POST', {
             searcher: {
                 operation: 'getDoc',
                 parameters: {
-                    idOrUrl,
+                    docId: idOrUrl,
                 },
             },
         });
+        if (result?.contentType && result?.body) {
+            return {
+                contents: result.body,
+                type: result.contentType,
+            };
+        }
+        return result;
     }
     async listDocs(userOptions) {
         return this.request('POST', {
@@ -100,9 +107,15 @@ export class RemoteSearcher extends Searcher {
             timeout: {
                 response: 150000,
             },
-            responseType: 'json',
+            //responseType: 'json',
             url: this.options.db,
         });
-        return resp.body?.result;
+        if (resp.headers['content-type']?.includes('application/json')) {
+            return JSON.parse(resp.body)?.result;
+        }
+        return {
+            contentType: resp.headers['content-type'],
+            body: resp.rawBody,
+        };
     }
 }

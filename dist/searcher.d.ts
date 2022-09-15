@@ -13,7 +13,7 @@ export declare class Searcher {
     getEntities(limit?: number, docIds?: number[]): Promise<IEntity[]>;
     getTopEntities(): Promise<IEntity[]>;
     getTOC(): Promise<ITOCItem[]>;
-    getDoc(idOrUrl: number | string): Promise<IDoc>;
+    getDoc(idOrUrl: number | string): Promise<Partial<IDoc>>;
     listDocs(userOptions?: Partial<IListDocsOptions>): Promise<{
         docs: Partial<IDoc>[];
         entities: IEntity[] | null;

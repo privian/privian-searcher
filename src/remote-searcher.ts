@@ -57,15 +57,22 @@ export class RemoteSearcher extends Searcher {
 		});
 	}
 
-	async getDoc(idOrUrl: number | string): Promise<IDoc> {
-		return this.request('POST', {
+	async getDoc(idOrUrl: number | string): Promise<Partial<IDoc>> {
+		const result = await this.request('POST', {
 			searcher: {
 				operation: 'getDoc',
 				parameters: {
-					idOrUrl,
+					docId: idOrUrl,
 				},
 			},
 		});
+		if (result?.contentType && result?.body) {
+			return {
+				contents: result.body,
+				type: result.contentType,
+			};	
+		}
+		return result;
 	}
 
 	async listDocs(userOptions?: Partial<IListDocsOptions>): Promise<{ docs: Partial<IDoc>[], entities: IEntity[] | null }> {
@@ -116,17 +123,21 @@ export class RemoteSearcher extends Searcher {
 	}
 
 	protected async request(method: Method, payload?: any) {
-		const resp = await got<{
-			result?: any;
-		}>({
+		const resp = await got({
 			json: payload,
 			method,
 			timeout: {
 				response: 150000,
 			},
-			responseType: 'json',
+			//responseType: 'json',
 			url: this.options.db,
 		});
-		return resp.body?.result;
+		if (resp.headers['content-type']?.includes('application/json')) {
+			return JSON.parse(resp.body)?.result;
+		}
+		return {
+			contentType: resp.headers['content-type'],
+			body: resp.rawBody,
+		};
 	}
 }

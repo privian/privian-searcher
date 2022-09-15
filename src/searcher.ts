@@ -137,7 +137,7 @@ export class Searcher {
 		});
 	}
 
-	async getDoc(idOrUrl: number | string): Promise<IDoc> {
+	async getDoc(idOrUrl: number | string): Promise<Partial<IDoc>> {
 		const metadata = await this.getMetadata();
 		const doc = await this.selectOne<IDbDoc & {
 			imageDocCrawl: string | null;
