@@ -57,23 +57,24 @@ export class RemoteSearcher extends Searcher {
         }
         return result;
     }
-    async listDocs(userOptions) {
+    async listDocs(options) {
+        console.log('> listDocs', options);
         return this.request('POST', {
             searcher: {
                 operation: 'listDocs',
                 parameters: {
-                    userOptions,
+                    options,
                 },
             },
         });
     }
-    async search(term, userOptions) {
+    async search(term, options) {
         return this.request('POST', {
             searcher: {
                 operation: 'search',
                 parameters: {
                     term,
-                    userOptions,
+                    options,
                 },
             },
         });

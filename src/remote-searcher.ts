@@ -76,6 +76,7 @@ export class RemoteSearcher extends Searcher {
 	}
 
 	async listDocs(options?: Partial<IListDocsOptions>): Promise<{ docs: Partial<IDoc>[], entities: IEntity[] | null }> {
+		console.log('> listDocs', options)
 		return this.request('POST', {
 			searcher: {
 				operation: 'listDocs',

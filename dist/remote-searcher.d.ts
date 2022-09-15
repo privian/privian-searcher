@@ -10,11 +10,11 @@ export declare class RemoteSearcher extends Searcher {
     getTopEntities(): Promise<IEntity[]>;
     getTOC(): Promise<ITOCItem[]>;
     getDoc(idOrUrl: number | string): Promise<Partial<IDoc>>;
-    listDocs(userOptions?: Partial<IListDocsOptions>): Promise<{
+    listDocs(options?: Partial<IListDocsOptions>): Promise<{
         docs: Partial<IDoc>[];
         entities: IEntity[] | null;
     }>;
-    search(term: string, userOptions?: Partial<ISearchOptions>): Promise<ISearchItem[]>;
+    search(term: string, options?: Partial<ISearchOptions>): Promise<ISearchItem[]>;
     selectAll<T>(sql: string, bindings?: any[]): Promise<T[]>;
     selectOne<T>(sql: string, bindings?: any[]): Promise<T>;
     protected request(method: Method, payload?: any): Promise<any>;
