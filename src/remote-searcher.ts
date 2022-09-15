@@ -42,7 +42,7 @@ export class RemoteSearcher extends Searcher {
 	async getTopEntities(): Promise<IEntity[]> {
 		return this.request('POST', {
 			searcher: {
-				operation: 'getEntities',
+				operation: 'getTopEntities',
 				parameters: {},
 			},
 		});
@@ -71,7 +71,7 @@ export class RemoteSearcher extends Searcher {
 	async listDocs(userOptions?: Partial<IListDocsOptions>): Promise<{ docs: Partial<IDoc>[], entities: IEntity[] | null }> {
 		return this.request('POST', {
 			searcher: {
-				operation: 'getlistDocsDoc',
+				operation: 'listDocs',
 				parameters: {
 					userOptions,
 				},

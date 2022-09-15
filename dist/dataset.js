@@ -30,7 +30,7 @@ export class Dataset extends EventEmitter {
         this.localFilePath = this.options.localFilePath || path.join(os.tmpdir(), path.basename(this.url));
     }
     get id() {
-        return path.basename(this.url).replace(/\.db$/, '');
+        return path.basename(new URL(this.url, 'http://localhost').pathname).replace(/\.db$/, '');
     }
     async checkForUpdates(head) {
         if (!head) {
