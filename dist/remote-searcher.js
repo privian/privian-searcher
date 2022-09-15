@@ -14,38 +14,46 @@ export class RemoteSearcher extends Searcher {
         return {};
     }
     async getEntities(limit = 100, docIds) {
-        return this.request('POST', {
-            searcher: {
-                operation: 'getEntities',
-                parameters: {
-                    limit,
-                    docIds,
+        return this.request('GET', {
+            action: {
+                searcher: {
+                    operation: 'getEntities',
+                    parameters: {
+                        limit,
+                        docIds,
+                    },
                 },
             },
         });
     }
     async getTopEntities() {
-        return this.request('POST', {
-            searcher: {
-                operation: 'getTopEntities',
-                parameters: {},
+        return this.request('GET', {
+            action: {
+                searcher: {
+                    operation: 'getTopEntities',
+                    parameters: {},
+                },
             },
         });
     }
     async getTOC() {
-        return this.request('POST', {
-            searcher: {
-                operation: 'getTOC',
-                parameters: {},
+        return this.request('GET', {
+            action: {
+                searcher: {
+                    operation: 'getTOC',
+                    parameters: {},
+                },
             },
         });
     }
     async getDoc(idOrUrl) {
-        const result = await this.request('POST', {
-            searcher: {
-                operation: 'getDoc',
-                parameters: {
-                    docId: idOrUrl,
+        const result = await this.request('GET', {
+            action: {
+                searcher: {
+                    operation: 'getDoc',
+                    parameters: {
+                        docId: idOrUrl,
+                    },
                 },
             },
         });
@@ -58,56 +66,70 @@ export class RemoteSearcher extends Searcher {
         return result;
     }
     async listDocs(options) {
-        return this.request('POST', {
-            searcher: {
-                operation: 'listDocs',
-                parameters: {
-                    options,
+        return this.request('GET', {
+            action: {
+                searcher: {
+                    operation: 'listDocs',
+                    parameters: {
+                        options,
+                    },
                 },
             },
         });
     }
     async search(term, options) {
-        return this.request('POST', {
-            searcher: {
-                operation: 'search',
-                parameters: {
-                    term,
-                    options,
+        return this.request('GET', {
+            action: {
+                searcher: {
+                    operation: 'search',
+                    parameters: {
+                        term,
+                        options,
+                    },
                 },
             },
         });
     }
     async selectAll(sql, bindings = []) {
-        return this.request('POST', {
-            searcher: {
-                operation: 'selectAll',
-                parameters: {
-                    sql,
-                    bindings,
+        return this.request('GET', {
+            action: {
+                searcher: {
+                    operation: 'selectAll',
+                    parameters: {
+                        sql,
+                        bindings,
+                    },
                 },
             },
         });
     }
     async selectOne(sql, bindings = []) {
-        return this.request('POST', {
-            searcher: {
-                operation: 'selectOne',
-                parameters: {
-                    sql,
-                    bindings,
+        return this.request('GET', {
+            action: {
+                searcher: {
+                    operation: 'selectOne',
+                    parameters: {
+                        sql,
+                        bindings,
+                    },
                 },
             },
         });
     }
     async request(method, payload) {
+        const searchParams = new URLSearchParams();
+        if (payload && method === 'GET') {
+            for (let key in payload) {
+                searchParams.set(key, typeof payload[key] === 'string' ? payload[key] : JSON.stringify(payload[key]));
+            }
+        }
         const resp = await got({
-            json: payload,
+            json: method !== 'GET' ? payload : void 0,
             method,
             timeout: {
                 response: 150000,
             },
-            //responseType: 'json',
+            searchParams,
             url: this.options.db,
         });
         if (resp.headers['content-type']?.includes('application/json')) {

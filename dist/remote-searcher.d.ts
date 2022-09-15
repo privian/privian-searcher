@@ -17,5 +17,5 @@ export declare class RemoteSearcher extends Searcher {
     search(term: string, options?: Partial<ISearchOptions>): Promise<ISearchItem[]>;
     selectAll<T>(sql: string, bindings?: any[]): Promise<T[]>;
     selectOne<T>(sql: string, bindings?: any[]): Promise<T>;
-    protected request(method: Method, payload?: any): Promise<any>;
+    protected request(method: Method, payload?: Record<string, any>): Promise<any>;
 }
