@@ -13,6 +13,7 @@ export declare abstract class Dataset extends EventEmitter {
     metadata: Record<string, string>;
     pullInterval?: NodeJS.Timeout;
     pulling: boolean;
+    remote: boolean;
     searcher?: Searcher;
     size: number | null;
     stats: fs.Stats | null;

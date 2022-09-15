@@ -50,6 +50,7 @@ export class Storage {
 				localFilePath: dataset.localFilePath,
 				metadata: dataset.metadata,
 				mtime: dataset.stats?.mtimeMs,
+				remote: dataset.remote,
 				size: dataset.size,
 				transferred: dataset.transferred,
 				tranferring: dataset.transferring,

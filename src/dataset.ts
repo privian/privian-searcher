@@ -18,6 +18,8 @@ export abstract class Dataset extends EventEmitter {
 
 	pulling: boolean = false;
 
+	remote: boolean = false;
+
 	searcher?: Searcher;
 	
 	size: number | null = null;
@@ -64,6 +66,7 @@ export abstract class Dataset extends EventEmitter {
 	async load() {
 		const head = await this.head();
 		if (head.remote && this.options.allowRemote !== false) {
+			this.remote = true;
 			this.metadata = head.metadata;
 			this.searcher = new RemoteSearcher({
 				datasetId: this.id,
@@ -72,6 +75,7 @@ export abstract class Dataset extends EventEmitter {
 			});
 
 		} else {
+			this.remote = false;
 			this.searcher = new Searcher({
 				datasetId: this.id,
 				db: this.localFilePath,

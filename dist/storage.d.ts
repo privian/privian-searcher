@@ -13,6 +13,7 @@ export declare class Storage {
         localFilePath: string;
         metadata: Record<string, string>;
         mtime: number | undefined;
+        remote: boolean;
         size: number | null;
         transferred: number;
         tranferring: boolean;
