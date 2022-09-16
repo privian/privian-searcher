@@ -115,6 +115,7 @@ export interface IDatasetOptions {
     normalizeUrl?: (link: ILink, datasetId?: string) => string;
 }
 export interface IStorageOptions {
+    allowRemote?: boolean;
     dir?: string;
     normalizeUrl?: (link: ILink, datasetId?: string) => string;
 }

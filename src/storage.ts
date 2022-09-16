@@ -82,7 +82,7 @@ export class Storage {
 	newDataset(url: string) {
 		const cls = Storage.getDatasetClass(url);
 		return new cls(url, {
-			allowRemote: true,
+			allowRemote: this.options.allowRemote !== false,
 			autoUpdate: true,
 			localFilePath: this.options.dir ? this.getFilePath(url) : void 0,
 			normalizeUrl: this.options.normalizeUrl,
