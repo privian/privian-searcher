@@ -9,9 +9,9 @@ export declare abstract class Dataset extends EventEmitter {
     readonly url: string;
     readonly options: IDatasetOptions;
     readonly MIN_UPDATE_INTERVAL = 900000;
+    loadInterval?: NodeJS.Timeout;
     localFilePath: string;
     metadata: Record<string, string>;
-    pullInterval?: NodeJS.Timeout;
     pulling: boolean;
     remote: boolean;
     searcher?: Searcher;
@@ -32,7 +32,7 @@ export declare abstract class Dataset extends EventEmitter {
     writeInfo(filePath: string, info: IStorageInfo): Promise<void>;
     compareInfo(info1: IStorageInfo, info2: IStorageInfo): boolean;
     destroy(unlinkData?: boolean): void;
-    startPullInterval(interval: number): void;
+    startLoadInterval(interval: number): void;
     abstract abort(): void;
     abstract headRequest(): Promise<IStorageInfo>;
     abstract pullRequest(destFilePath: string): Promise<IStorageInfo>;

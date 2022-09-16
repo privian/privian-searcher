@@ -10,11 +10,11 @@ import type { IDatasetOptions, IStorageInfo } from './types.js';
 export abstract class Dataset extends EventEmitter {
 	readonly MIN_UPDATE_INTERVAL = 900000;
 
+	loadInterval?: NodeJS.Timeout;
+
 	localFilePath: string;
 
 	metadata: Record<string, string> = {};
-
-	pullInterval?: NodeJS.Timeout;
 
 	pulling: boolean = false;
 
@@ -87,11 +87,11 @@ export abstract class Dataset extends EventEmitter {
 					await this.pull();
 				}
 				this.metadata = head.metadata;
-				const updateInterval = this.metadata.updateInterval && parseDuration(this.metadata.updateInterval);
-				if (updateInterval && updateInterval >= this.MIN_UPDATE_INTERVAL) {
-					this.startPullInterval(updateInterval);
-				}
 			}
+		}
+		const updateInterval = this.metadata.updateInterval && parseDuration(this.metadata.updateInterval);
+		if (updateInterval && updateInterval >= this.MIN_UPDATE_INTERVAL) {
+			this.startLoadInterval(updateInterval);
 		}
 	}
 
@@ -163,8 +163,8 @@ export abstract class Dataset extends EventEmitter {
 		if (this.transferring) {
 			this.abort();
 		}
-		if (this.pullInterval) {
-			clearInterval(this.pullInterval);
+		if (this.loadInterval) {
+			clearInterval(this.loadInterval);
 		}
 		if (unlinkData) {
 			try {
@@ -177,9 +177,9 @@ export abstract class Dataset extends EventEmitter {
 		}
 	}
 
-	startPullInterval(interval: number) {
-		this.pullInterval = setInterval(() => {
-			this.pull();
+	startLoadInterval(interval: number) {
+		this.loadInterval = setInterval(() => {
+			this.load();
 		}, interval);
 	}
 

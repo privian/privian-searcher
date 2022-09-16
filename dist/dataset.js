@@ -9,9 +9,9 @@ export class Dataset extends EventEmitter {
     url;
     options;
     MIN_UPDATE_INTERVAL = 900000;
+    loadInterval;
     localFilePath;
     metadata = {};
-    pullInterval;
     pulling = false;
     remote = false;
     searcher;
@@ -72,11 +72,11 @@ export class Dataset extends EventEmitter {
                     await this.pull();
                 }
                 this.metadata = head.metadata;
-                const updateInterval = this.metadata.updateInterval && parseDuration(this.metadata.updateInterval);
-                if (updateInterval && updateInterval >= this.MIN_UPDATE_INTERVAL) {
-                    this.startPullInterval(updateInterval);
-                }
             }
+        }
+        const updateInterval = this.metadata.updateInterval && parseDuration(this.metadata.updateInterval);
+        if (updateInterval && updateInterval >= this.MIN_UPDATE_INTERVAL) {
+            this.startLoadInterval(updateInterval);
         }
     }
     async mkdir(dirPath) {
@@ -145,8 +145,8 @@ export class Dataset extends EventEmitter {
         if (this.transferring) {
             this.abort();
         }
-        if (this.pullInterval) {
-            clearInterval(this.pullInterval);
+        if (this.loadInterval) {
+            clearInterval(this.loadInterval);
         }
         if (unlinkData) {
             try {
@@ -159,9 +159,9 @@ export class Dataset extends EventEmitter {
             }
         }
     }
-    startPullInterval(interval) {
-        this.pullInterval = setInterval(() => {
-            this.pull();
+    startLoadInterval(interval) {
+        this.loadInterval = setInterval(() => {
+            this.load();
         }, interval);
     }
 }

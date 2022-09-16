@@ -10,7 +10,7 @@ export declare class Storage {
     remove(urlOrId: string): void;
     list(): {
         id: string;
-        localFilePath: string;
+        localFilePath: string | undefined;
         metadata: Record<string, string>;
         mtime: number | undefined;
         remote: boolean;
