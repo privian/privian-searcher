@@ -40,6 +40,7 @@ export class Storage {
         return [...this.datasets].map(([_, dataset]) => {
             return {
                 id: dataset.id,
+                error: dataset.error,
                 localFilePath: !dataset.remote ? dataset.localFilePath : void 0,
                 metadata: dataset.metadata,
                 mtime: dataset.stats?.mtimeMs,
