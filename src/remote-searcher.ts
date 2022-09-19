@@ -156,7 +156,7 @@ export class RemoteSearcher extends Searcher {
 			url: this.options.db,
 			throwHttpErrors: false,
 		});
-		if (resp.statusCode >= 200) {
+		if (resp.statusCode > 200) {
 			throw new Error(`Invalid server response ${resp.statusCode}: ${resp.rawBody}`);
 		}
 		if (resp.headers['content-type']?.includes('application/json')) {

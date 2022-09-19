@@ -48,6 +48,7 @@ export class Storage {
 			return {
 				id: dataset.id,
 				error: dataset.error,
+				loaded: dataset.loaded,
 				localFilePath: !dataset.remote ? dataset.localFilePath : void 0,
 				metadata: dataset.metadata,
 				mtime: dataset.stats?.mtimeMs,

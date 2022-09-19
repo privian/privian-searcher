@@ -11,6 +11,7 @@ export declare class Storage {
     list(): {
         id: string;
         error: string | undefined;
+        loaded: boolean;
         localFilePath: string | undefined;
         metadata: Record<string, string>;
         mtime: number | undefined;

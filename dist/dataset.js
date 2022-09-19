@@ -10,6 +10,7 @@ export class Dataset extends EventEmitter {
     options;
     MIN_UPDATE_INTERVAL = 900000;
     error;
+    loaded = false;
     loadInterval;
     localFilePath;
     metadata = {};
@@ -80,6 +81,7 @@ export class Dataset extends EventEmitter {
             if (updateInterval && updateInterval >= this.MIN_UPDATE_INTERVAL) {
                 this.startLoadInterval(updateInterval);
             }
+            this.loaded = true;
         }
         catch (err) {
             this.error = err.message;

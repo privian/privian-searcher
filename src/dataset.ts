@@ -12,6 +12,8 @@ export abstract class Dataset extends EventEmitter {
 
 	error?: string;
 
+	loaded: boolean = false;
+
 	loadInterval?: NodeJS.Timeout;
 
 	localFilePath: string;
@@ -96,6 +98,7 @@ export abstract class Dataset extends EventEmitter {
 			if (updateInterval && updateInterval >= this.MIN_UPDATE_INTERVAL) {
 				this.startLoadInterval(updateInterval);
 			}
+			this.loaded = true;
 		} catch (err: any) {
 			this.error = err.message;
 			return false;

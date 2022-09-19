@@ -10,6 +10,7 @@ export declare abstract class Dataset extends EventEmitter {
     readonly options: IDatasetOptions;
     readonly MIN_UPDATE_INTERVAL = 900000;
     error?: string;
+    loaded: boolean;
     loadInterval?: NodeJS.Timeout;
     localFilePath: string;
     metadata: Record<string, string>;
