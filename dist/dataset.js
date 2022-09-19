@@ -9,6 +9,7 @@ export class Dataset extends EventEmitter {
     url;
     options;
     MIN_UPDATE_INTERVAL = 900000;
+    error;
     loadInterval;
     localFilePath;
     metadata = {};
@@ -49,35 +50,42 @@ export class Dataset extends EventEmitter {
         return this.headRequest();
     }
     async load() {
-        const head = await this.head();
-        if (head.remote && this.options.allowRemote !== false) {
-            this.remote = true;
-            this.metadata = head.metadata;
-            this.searcher = new RemoteSearcher({
-                datasetId: this.id,
-                db: this.url,
-                normalizeUrl: this.options.normalizeUrl,
-            });
-        }
-        else {
-            this.remote = false;
-            this.searcher = new Searcher({
-                datasetId: this.id,
-                db: this.localFilePath,
-                normalizeUrl: this.options.normalizeUrl,
-            });
-            if (this.options.autoUpdate) {
-                await this.checkForUpdates(head);
-                if (this.updateAvailable) {
-                    await this.pull();
-                }
+        try {
+            const head = await this.head();
+            if (head.remote && this.options.allowRemote !== false) {
+                this.remote = true;
                 this.metadata = head.metadata;
+                this.searcher = new RemoteSearcher({
+                    datasetId: this.id,
+                    db: this.url,
+                    normalizeUrl: this.options.normalizeUrl,
+                });
+            }
+            else {
+                this.remote = false;
+                this.searcher = new Searcher({
+                    datasetId: this.id,
+                    db: this.localFilePath,
+                    normalizeUrl: this.options.normalizeUrl,
+                });
+                if (this.options.autoUpdate) {
+                    await this.checkForUpdates(head);
+                    if (this.updateAvailable) {
+                        await this.pull();
+                    }
+                    this.metadata = head.metadata;
+                }
+            }
+            const updateInterval = this.metadata.updateInterval && parseDuration(this.metadata.updateInterval);
+            if (updateInterval && updateInterval >= this.MIN_UPDATE_INTERVAL) {
+                this.startLoadInterval(updateInterval);
             }
         }
-        const updateInterval = this.metadata.updateInterval && parseDuration(this.metadata.updateInterval);
-        if (updateInterval && updateInterval >= this.MIN_UPDATE_INTERVAL) {
-            this.startLoadInterval(updateInterval);
+        catch (err) {
+            this.error = err.message;
+            return false;
         }
+        return true;
     }
     async mkdir(dirPath) {
         await fs.promises.mkdir(dirPath, {

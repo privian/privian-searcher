@@ -10,6 +10,8 @@ import type { IDatasetOptions, IStorageInfo } from './types.js';
 export abstract class Dataset extends EventEmitter {
 	readonly MIN_UPDATE_INTERVAL = 900000;
 
+	error?: string;
+
 	loadInterval?: NodeJS.Timeout;
 
 	localFilePath: string;
@@ -63,36 +65,42 @@ export abstract class Dataset extends EventEmitter {
 		return this.headRequest();
 	}
 
-	async load() {
-		const head = await this.head();
-		if (head.remote && this.options.allowRemote !== false) {
-			this.remote = true;
-			this.metadata = head.metadata;
-			this.searcher = new RemoteSearcher({
-				datasetId: this.id,
-				db: this.url,
-				normalizeUrl: this.options.normalizeUrl,
-			});
-
-		} else {
-			this.remote = false;
-			this.searcher = new Searcher({
-				datasetId: this.id,
-				db: this.localFilePath,
-				normalizeUrl: this.options.normalizeUrl,
-			});
-			if (this.options.autoUpdate) {
-				await this.checkForUpdates(head);
-				if (this.updateAvailable) {
-					await this.pull();
-				}
+	async load(): Promise<boolean> {
+		try {
+			const head = await this.head();
+			if (head.remote && this.options.allowRemote !== false) {
+				this.remote = true;
 				this.metadata = head.metadata;
+				this.searcher = new RemoteSearcher({
+					datasetId: this.id,
+					db: this.url,
+					normalizeUrl: this.options.normalizeUrl,
+				});
+
+			} else {
+				this.remote = false;
+				this.searcher = new Searcher({
+					datasetId: this.id,
+					db: this.localFilePath,
+					normalizeUrl: this.options.normalizeUrl,
+				});
+				if (this.options.autoUpdate) {
+					await this.checkForUpdates(head);
+					if (this.updateAvailable) {
+						await this.pull();
+					}
+					this.metadata = head.metadata;
+				}
 			}
+			const updateInterval = this.metadata.updateInterval && parseDuration(this.metadata.updateInterval);
+			if (updateInterval && updateInterval >= this.MIN_UPDATE_INTERVAL) {
+				this.startLoadInterval(updateInterval);
+			}
+		} catch (err: any) {
+			this.error = err.message;
+			return false;
 		}
-		const updateInterval = this.metadata.updateInterval && parseDuration(this.metadata.updateInterval);
-		if (updateInterval && updateInterval >= this.MIN_UPDATE_INTERVAL) {
-			this.startLoadInterval(updateInterval);
-		}
+		return true;
 	}
 
 	async mkdir(dirPath: string) {

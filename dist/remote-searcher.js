@@ -127,11 +127,16 @@ export class RemoteSearcher extends Searcher {
             json: method !== 'GET' ? payload : void 0,
             method,
             timeout: {
-                response: 150000,
+                response: 15000,
+                connect: 5000,
             },
             searchParams,
             url: this.options.db,
+            throwHttpErrors: false,
         });
+        if (resp.statusCode >= 200) {
+            throw new Error(`Invalid server response ${resp.statusCode}: ${resp.rawBody}`);
+        }
         if (resp.headers['content-type']?.includes('application/json')) {
             return JSON.parse(resp.body)?.result;
         }
