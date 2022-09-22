@@ -69,6 +69,7 @@ export abstract class Dataset extends EventEmitter {
 
 	async load(): Promise<boolean> {
 		try {
+			this.error = void 0;
 			const head = await this.head();
 			if (head.remote && this.options.allowRemote !== false) {
 				this.remote = true;
